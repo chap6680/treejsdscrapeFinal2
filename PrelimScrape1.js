@@ -2,40 +2,97 @@ const scrapeIt = require("scrape-it")
 const fs = require('fs');
 const csvParse = require('json2csv').Parser;
 
-//array capturing scraped item detail
+//array capturing scraped item detail - gets pushed to csv
 let arrayTShirtDetail = [];
+
+// get current date
+const date = new Date();
+
+//tempNotification - used as a flag - that there was an error.
+let consoleNotify = 0;
+let csvError = 0;
 
 //default urls & paths to save files
 const searchURL = "http://shirts4mike.com/shirts.php/";
 const topURL = "http://shirts4mike.com/"
-const dir = './data';
-
-// get current date
-const date = new Date();
+const localdir = './data';
+const fileName = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}.csv`;
 //let dateStringScrape = "./data/scrapper-err" + date.getFullYear() + "-" + date.getMonth() + ".log";
 
 //Error Log file name and location
-errorPathName = "./data/scrapper-err";
+errorPathName = "./data/scrapper-err.log";
 
 // CSV - Set default fields 
 const fields = ["Title", "Price", "ImageURL", "URL", "Time"];
 
 // Add fields - json2csv parser
 const csvParser = new csvParse({ fields, quote:"", delimiter:', ' });
-
-
-// csv - writes and creates file;  will overwrite existing file 
 const csvHandler = (data) => {
-    const parser = csvParser.parse(data);
-    const fileName = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}.csv`;
-    fs.writeFile(`${dir}/${fileName}`, parser, error => {
-      if (error) throw error;
-    });
+	try {
+		const parser = csvParser.parse(data);
+		fs.writeFile(`${localdir}/${fileName}`, parser, error => {
+			if (error) { 
+
+			if (csvError === 0) {
+				console.log(`Error saving CSV.  CSV Not updated.  Check to see if file at ${errorPathName} is currently open`);
+				csvError = 1;
+				consoleNotify = 1;
+			}
+		}
+		});
+
+	} catch (error) {
+		console.log("error writing to file");
+//		console.log(error);
+		if (csvError === 0) {
+			csvError = 1;
+		}
+	};
+	return csvError;
 }
 
-// Create directory 
-if(!fs.existsSync(dir)){
-    fs.mkdirSync(dir);
+// csv - writes and creates file;  will overwrite existing file
+/* const csvHandler = (data) => {
+	//try {
+	const parser = csvParser.parse(data);
+    
+	fs.writeFile(`${localdir}/${fileName}`, parser, error => {
+		if (err) throw 'error writing file: ' + err;
+ */
+
+ /* 		const errorMsg = ;
+				fs.appendFile(errorPathName, "\n" + `[${date.toString()}] <${errorMsg}>\n`, err => {
+					if (err) throw error;
+				}); */
+
+				/*
+		const parser = csvParser.parse(data);fs.writeFile(`${localdir}/${fileName}`, parser, error => {
+			
+			const errorMsg = ;
+			fs.appendFile(errorPathName, "\n" + `[${date.toString()}] <${errorMsg}>\n`, err => {
+				if (err) throw error;
+			});
+ */	
+
+		//console.log({ error });
+	/* 	if (error) {
+			console.log({ error });
+			if (errno === -4082) {
+				console.log("Scrape Failed.  Appears the CSV File is open");
+				process.exit();
+			};
+		} 
+//      if (error) throw error;
+		if (error) { 
+			return console.log(error)
+		}
+	});
+}
+*/
+
+// Create localdirectory 
+if(!fs.existsSync(localdir)){
+    fs.mkdirSync(localdir);
 }
 
 // direct urls - used for testing
@@ -105,6 +162,17 @@ scrapeIt(searchURL, {
 			//CSV - call function to create 
 			const csvtemp = csvParser.parse(arrayTShirtDetail);
 			csvHandler(arrayTShirtDetail);
+			if (consoleNotify === 0) {
+				console.log(`Data scraped and saved at ${localdir}/${fileName}`);
+				consoleNotify = 1;
+			}
+			if (csvError === 1) { 
+				console.log('Failed to update CSV');
+				fs.appendFile(errorPathName, ("\r\n" + "Failed to update CSV.  CSV not updated."), err => { 
+					if (err) throw error;
+				});
+				
+			}
 		})
 	})
 	}).catch(
@@ -113,12 +181,13 @@ scrapeIt(searchURL, {
 				const errorMsg = `There's been a 404 error. Cannot connect to ${searchURL}.  See ${errorPathName}`;
 				console.log(errorMsg);
 				// When an error occurs, it is logged to a file named scraper-error.log 
-				fs.appendFile(errorPathName, "\n" + `[${date.toString()}] <${errorMsg}>\n`, err => {
+				fs.appendFile(errorPathName, "\r\n" + `[${date.toString()}] <${errorMsg}>\n`, err => {
 					if (err) throw error;
 				});
 			}
 	 })
 
+	
 /* const displayError = (error) => {
 	if (error) {
 		if (error.code === "ENOTFOUND" || error.code === "ENOENT") {
