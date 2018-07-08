@@ -8,12 +8,12 @@ Download the github files
 Install Dependencies  
 ```
 
-`NPM install`  
+NPM install  
 ```
 
 Compile and Run  
 ```
-`NPM Start`  
+NPM Start  
 ```
 
 About this github repository 
